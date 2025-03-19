@@ -19,6 +19,7 @@ float aceletation_matrix[3];
 float magnetometer_matrix[3];
 int acc_rot=0;
 int acc_acc=0;
+uint64_t time_stamp_var;
 
 BNO085 IMU;
 void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activitiesToEnable = 0xFFFFFFFF);
@@ -124,8 +125,10 @@ void read_acceleration()
     aceletation_matrix[1]=IMU.getAccelY();
     aceletation_matrix[2]=IMU.getAccelZ();
     acc_acc=IMU.getAccelAccuracy();
+    time_stamp_var=IMU.getTimeStamp();
   }
 }
+
 
 void read_rotation_vector()
 {
