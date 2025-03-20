@@ -3,6 +3,21 @@
 //#include <Arduino.h>
 
 #define rainbow_brig 10u
+#define LED_PIN 10U
+#define LED_DEFAULT_BRIGHTNESS 7U
+#define LED_SLEEP_BRIGHTNESS 3U
+
+#define LED_COLOR_RED 0XFF0000U
+#define LED_COLOR_ORANGE 0XC04000U
+#define LED_COLOR_YELLOW 0XA06000U
+#define LED_COLOR_GREEN 0X00FF00U
+#define LED_COLOR_AQUA 0X00A030U
+#define LED_COLOR_PINK 0XC00020U
+#define LED_COLOR_BLUE 0X0000FFU
+#define LED_COLOR_WHITE 0XFFFFFFU
+
+
+
 void LED(uint8_t r, uint8_t g, uint8_t b) {neopixelWrite(LED_PIN, r, g, b); /*RMT ESP32 function for addressable LEDs*/}
 void led_init()
 {

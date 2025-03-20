@@ -2,6 +2,7 @@
 #include"BLE_config.h"
 #include <BNO085.h>
 #include <led.h>
+#include <Timer_header.h>
 CodeCell myCodeCell;
 
 float Roll = 0.0;
@@ -19,24 +20,16 @@ float aceletation_matrix[3];
 float magnetometer_matrix[3];
 int acc_rot=0;
 int acc_acc=0;
-uint64_t time_stamp_var;
+int64_t time_stamp_var;
+float IMU_data[23]={0};
 
+bool err=0;
+bool _tap_data=false;
+uint16_t _step_data = 0;
+uint8_t _mstate_data = 0;
+uint8_t _activity_data = 0;
 BNO085 IMU;
 void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activitiesToEnable = 0xFFFFFFFF);
-
-
-#define LED_PIN 10U
-#define LED_DEFAULT_BRIGHTNESS 7U
-#define LED_SLEEP_BRIGHTNESS 3U
-
-#define LED_COLOR_RED 0XFF0000U
-#define LED_COLOR_ORANGE 0XC04000U
-#define LED_COLOR_YELLOW 0XA06000U
-#define LED_COLOR_GREEN 0X00FF00U
-#define LED_COLOR_AQUA 0X00A030U
-#define LED_COLOR_PINK 0XC00020U
-#define LED_COLOR_BLUE 0X0000FFU
-#define LED_COLOR_WHITE 0XFFFFFFU
 
 void setup() {
     Serial.begin(115200);
@@ -44,7 +37,11 @@ void setup() {
     led_init();
     IMU_Init(IMU_config,10,0xFFFFFFFF);
     Init_BLE();
-
+    
+    if(err==1)
+    {
+      while(1){LED(100,0,0);delay(100);}
+    }
     /*
     if (!BLE.begin()) {
     Serial.println("starting Bluetooth® Low Energy module failed!");
@@ -74,10 +71,20 @@ void loop()
       
     while(central.connected()) 
     {
-      read_rotation_vector();
-      read_acceleration();
-      update_acc();
-      update_gyr();
+      //read_rotation_vector();
+      //read_acceleration();
+      //update_acc();
+      //update_gyr();
+      IMU_read();
+      Data_IMU[0]=IMU_data[8];
+      Data_IMU[1]=IMU_data[9];
+      Data_IMU[2]=IMU_data[10];
+      Data_IMU[3]=IMU_data[11];
+      Data_IMU[4]=IMU_data[12];
+      Data_IMU[5]=IMU_data[13];
+      Show_IMU_data_UART(Data_IMU);
+      //Serial.printf("TimeStamp: %i, ", time_stamp_var);
+      Serial.print("TimeStamp: "); Serial.print(time_stamp_var); Serial.print(", ");
       LED(100u,100u,100u);// device connected and sending data 
 
     }
@@ -104,7 +111,6 @@ void loop()
 
 void update_acc()
 {
-
   AccXChar.writeValue(String(aceletation_matrix[0]));
   AccYChar.writeValue(String(aceletation_matrix[1]));
   AccZChar.writeValue(String(aceletation_matrix[2]));
@@ -115,6 +121,95 @@ void update_gyr()
   GyroXChar.writeValue(String(RIJK[1]));
   GyroYChar.writeValue(String(RIJK[2]));
   GyroZChar.writeValue(String(RIJK[3]));
+}
+
+void IMU_read()
+{
+  bool error_flag=1;
+  uint8_t imu_read_timer=0U;
+  _tap_data=false;
+
+  while (IMU.getSensorEvent() == true) {
+    //Serial.print("event found");
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_ROTATION_VECTOR) {
+      IMU_data[0] = IMU.getRot_R();
+      IMU_data[1] = IMU.getRot_I();
+      IMU_data[2] = IMU.getRot_J();
+      IMU_data[3] = IMU.getRot_K();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_GAME_ROTATION_VECTOR) {
+      IMU_data[4] = IMU.getGameReal();
+      IMU_data[5] = IMU.getGameI();
+      IMU_data[6] = IMU.getGameJ();
+      IMU_data[7] = IMU.getGameK();
+      error_flag = 0;
+
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_ACCELEROMETER) {
+      IMU_data[8] = IMU.getAccelX();
+      IMU_data[9] = IMU.getAccelY();
+      IMU_data[10] = IMU.getAccelZ();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_GYROSCOPE_CALIBRATED) {
+      IMU_data[11] = IMU.getGyroX();
+      IMU_data[12] = IMU.getGyroY();
+      IMU_data[13] = IMU.getGyroZ();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_MAGNETIC_FIELD) {
+      IMU_data[14] = IMU.getMagX();
+      IMU_data[15] = IMU.getMagY();
+      IMU_data[16] = IMU.getMagZ();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_GRAVITY) {
+      IMU_data[17] = IMU.getGravityX();
+      IMU_data[18] = IMU.getGravityY();
+      IMU_data[19] = IMU.getGravityZ();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_LINEAR_ACCELERATION) {
+      IMU_data[20] = IMU.getLinAccelX();
+      IMU_data[21] = IMU.getLinAccelY();
+      IMU_data[22] = IMU.getLinAccelZ();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_TAP_DETECTOR) {
+      _tap_data = true;
+      error_flag = 0;
+    } else {
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_STEP_COUNTER) {
+      _step_data = (uint16_t)IMU.getStepCount();
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_STABILITY_CLASSIFIER) {
+      _mstate_data = IMU.getStabilityClassifier();
+      error_flag = 0;
+    } else {
+      _mstate_data = 0;
+      error_flag = 0;
+    }
+    if (IMU.getSensorEventID() == SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER) {
+      _activity_data = IMU.getActivityClassifier();
+      error_flag = 0;
+    }
+    if (error_flag) {
+      imu_read_timer++;
+      if (imu_read_timer > 20U) {
+        Serial.println(">> Error: IMU Sensor not found");
+        delay(500);
+        return;
+      }
+    }
+  //time_stamp_var=IMU.getTimeStamp();
+    time_stamp_var=get_time_us();
+  }
+  //Wire.endTransmission(false);
+
 }
 
 void read_acceleration()
@@ -149,27 +244,28 @@ void IMU_Init(uint32_t config, uint16_t timeBetweenReports, uint32_t activitiesT
 {
    Wire.begin(8,9,400000);
     if (!IMU.begin(Wire)) {
-        Serial.printf("Error: No se pudo inicializar el BNO085 \n");}
+        Serial.printf("Error: No se pudo inicializar el BNO085 \n");
+        err=1;}
 	 else{Serial.printf("BNO085 inicializado correctamente \n");}
 
-    if (config & 0b100000000000000000) { if(IMU.enableRotationVector(timeBetweenReports)) Serial.println("Rotation Vector: true"); else Serial.println("Rotation Vector: error"); }
-    if (config & 0b010000000000000000) { if(IMU.enableGeomagneticRotationVector(timeBetweenReports)) Serial.println("Geomagnetic Rotation Vector: true"); else Serial.println("Geomagnetic Rotation Vector: error"); }
-    if (config & 0b001000000000000000) { if(IMU.enableGameRotationVector(timeBetweenReports)) Serial.println("Game Rotation Vector: true"); else Serial.println("Game Rotation Vector: error"); }
-    if (config & 0b000100000000000000) { if(IMU.enableARVRStabilizedRotationVector(timeBetweenReports)) Serial.println("AR/VR Stabilized Rotation Vector: true"); else Serial.println("AR/VR Stabilized Rotation Vector: error"); }
-    if (config & 0b000010000000000000) { if(IMU.enableARVRStabilizedGameRotationVector(timeBetweenReports)) Serial.println("AR/VR Stabilized Game Rotation Vector: true"); else Serial.println("AR/VR Stabilized Game Rotation Vector: error"); }
-    if (config & 0b000001000000000000) { if(IMU.enableAccelerometer(timeBetweenReports)) Serial.println("Accelerometer: true"); else Serial.println("Accelerometer: error"); }
-    if (config & 0b000000100000000000) { if(IMU.enableLinearAccelerometer(timeBetweenReports)) Serial.println("Linear Accelerometer: true"); else Serial.println("Linear Accelerometer: error"); }
-    if (config & 0b000000010000000000) { if(IMU.enableGravity(timeBetweenReports)) Serial.println("Gravity: true"); else Serial.println("Gravity: error"); }
-    if (config & 0b000000001000000000) { if(IMU.enableGyro(timeBetweenReports)) Serial.println("Gyro: true"); else Serial.println("Gyro: error"); }
-    if (config & 0b000000000100000000) { if(IMU.enableUncalibratedGyro(timeBetweenReports)) Serial.println("Uncalibrated Gyro: true"); else Serial.println("Uncalibrated Gyro: error"); }
-    if (config & 0b000000000010000000) { if(IMU.enableMagnetometer(timeBetweenReports)) Serial.println("Magnetometer: true"); else Serial.println("Magnetometer: error"); }
-    if (config & 0b000000000001000000) { if(IMU.enableTapDetector(timeBetweenReports)) Serial.println("Tap Detector: true"); else Serial.println("Tap Detector: error"); }
-    if (config & 0b000000000000100000) { if(IMU.enableStepCounter(timeBetweenReports)) Serial.println("Step Counter: true"); else Serial.println("Step Counter: error"); }
-    if (config & 0b000000000000010000) { if(IMU.enableStabilityClassifier(timeBetweenReports)) Serial.println("Stability Classifier: true"); else Serial.println("Stability Classifier: error"); }
-    if (config & 0b000000000000001000) { if(IMU.enableActivityClassifier(timeBetweenReports, activitiesToEnable)) Serial.println("Activity Classifier: true"); else Serial.println("Activity Classifier: error"); }
-    if (config & 0b000000000000000100) { if(IMU.enableRawAccelerometer(timeBetweenReports)) Serial.println("Raw Accelerometer: true"); else Serial.println("Raw Accelerometer: error"); }
-    if (config & 0b000000000000000010) { if(IMU.enableRawGyro(timeBetweenReports)) Serial.println("Raw Gyro: true"); else Serial.println("Raw Gyro: error"); }
-    if (config & 0b000000000000000001) { if(IMU.enableRawMagnetometer(timeBetweenReports)) Serial.println("Raw Magnetometer: true"); else Serial.println("Raw Magnetometer: error"); }
+    if (config & 0b100000000000000000) { if(IMU.enableRotationVector(timeBetweenReports)) Serial.println("Rotation Vector: true"); else {Serial.println("Rotation Vector: error"); err=1;} }
+    if (config & 0b010000000000000000) { if(IMU.enableGeomagneticRotationVector(timeBetweenReports)) Serial.println("Geomagnetic Rotation Vector: true"); else {Serial.println("Geomagnetic Rotation Vector: error");err=1;} }
+    if (config & 0b001000000000000000) { if(IMU.enableGameRotationVector(timeBetweenReports)) Serial.println("Game Rotation Vector: true"); else {Serial.println("Game Rotation Vector: error"); err=1;} }
+    if (config & 0b000100000000000000) { if(IMU.enableARVRStabilizedRotationVector(timeBetweenReports)) Serial.println("AR/VR Stabilized Rotation Vector: true"); else {Serial.println("AR/VR Stabilized Rotation Vector: error"); err=1;}}
+    if (config & 0b000010000000000000) { if(IMU.enableARVRStabilizedGameRotationVector(timeBetweenReports)) Serial.println("AR/VR Stabilized Game Rotation Vector: true"); else {Serial.println("AR/VR Stabilized Game Rotation Vector: error");err=1;} }
+    if (config & 0b000001000000000000) { if(IMU.enableAccelerometer(timeBetweenReports)) Serial.println("Accelerometer: true"); else {Serial.println("Accelerometer: error"); err=1;} }
+    if (config & 0b000000100000000000) { if(IMU.enableLinearAccelerometer(timeBetweenReports)) Serial.println("Linear Accelerometer: true"); else {Serial.println("Linear Accelerometer: error");err=1;} }
+    if (config & 0b000000010000000000) { if(IMU.enableGravity(timeBetweenReports)) Serial.println("Gravity: true"); else {Serial.println("Gravity: error"); err=1;}}
+    if (config & 0b000000001000000000) { if(IMU.enableGyro(timeBetweenReports)) Serial.println("Gyro: true"); else {Serial.println("Gyro: error"); err=1;}}
+    if (config & 0b000000000100000000) { if(IMU.enableUncalibratedGyro(timeBetweenReports)) Serial.println("Uncalibrated Gyro: true"); else {Serial.println("Uncalibrated Gyro: error"); err=1;}}
+    if (config & 0b000000000010000000) { if(IMU.enableMagnetometer(timeBetweenReports)) Serial.println("Magnetometer: true"); else {Serial.println("Magnetometer: error"); err=1;}}
+    if (config & 0b000000000001000000) { if(IMU.enableTapDetector(timeBetweenReports)) Serial.println("Tap Detector: true"); else {Serial.println("Tap Detector: error"); err=1;}}
+    if (config & 0b000000000000100000) { if(IMU.enableStepCounter(timeBetweenReports)) Serial.println("Step Counter: true"); else {Serial.println("Step Counter: error"); err=1;}}
+    if (config & 0b000000000000010000) { if(IMU.enableStabilityClassifier(timeBetweenReports)) Serial.println("Stability Classifier: true"); else {Serial.println("Stability Classifier: error"); err=1;} }
+    if (config & 0b000000000000001000) { if(IMU.enableActivityClassifier(timeBetweenReports, activitiesToEnable)) Serial.println("Activity Classifier: true"); else {Serial.println("Activity Classifier: error");err=1; }}
+    if (config & 0b000000000000000100) { if(IMU.enableRawAccelerometer(timeBetweenReports)) Serial.println("Raw Accelerometer: true"); else {Serial.println("Raw Accelerometer: error"); err=1;}}
+    if (config & 0b000000000000000010) { if(IMU.enableRawGyro(timeBetweenReports)) Serial.println("Raw Gyro: true"); else {Serial.println("Raw Gyro: error");err=1; }}
+    if (config & 0b000000000000000001) { if(IMU.enableRawMagnetometer(timeBetweenReports)) Serial.println("Raw Magnetometer: true"); else {Serial.println("Raw Magnetometer: error"); err=1;}}
  
 }
 
@@ -194,7 +290,7 @@ void Rotation_deg(float &roll, float &pitch, float &yaw)
 
 }
 
-void Show_IMU_data_UART()
+void Show_IMU_data_UART(float *Data_IMU)
 {
   // Leer datos del monitor serial
     while (Serial.available()) 
