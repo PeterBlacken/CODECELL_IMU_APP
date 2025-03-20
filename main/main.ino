@@ -36,6 +36,8 @@ uint8_t _activity_data = 0;
 BNO085 IMU;
 void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activitiesToEnable = 0xFFFFFFFF);
 
+//const int size_of_struct= 200;
+
 void setup() {
     Serial.begin(115200);
     while(!Serial); 

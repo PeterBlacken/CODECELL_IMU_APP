@@ -8,15 +8,15 @@
 //#include <Timer_header.h>
 //#include <cstdint>
 const float Vs= 40;
-const float R = 8e4;
-const float C = 4e-6;
+const float R = 8e5;
+const float C = 40e-6;
 
 const float Vc_0=0;
 float Vc_n;
 float Vc_n1;
 
-const float delta_time=0.0001;
-const int end_step=200;
+const float delta_time=0.00001;
+const int end_step=size_of_struct;
 
 const float tau= R*C;
 
@@ -29,13 +29,13 @@ typedef struct
 
 typedef struct{solve_element_t matrix[end_step];} solve_matrix_t;
 
+static solve_matrix_t m; // asigno el struct a la memoria static dynamica porque o si no la stack se overflow
 //float fx(float x){return (x*x)-2;}
 
 float Dot_fx(float Vc){return (Vs-Vc)/(R*C);}
 
 void solve()
 {
-	solve_matrix_t m;
 	Vc_n=Vc_0;	
 	
 	for (int step=0;step<end_step;step++)
@@ -54,7 +54,7 @@ void solve()
 	for (int step=0; step<end_step ; step++)
 	{
 		Serial.printf("TimeStamp = %i uS, Time = %.5f, VC= %.5f step= %i \n",m.matrix[step].timeStamp, m.matrix[step].time_x,m.matrix[step].solve_y,step);
-		//delay(200);
+		delay(20);
 	}
 
 }

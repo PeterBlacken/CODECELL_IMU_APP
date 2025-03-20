@@ -1,17 +1,7 @@
 
 #include <ArduinoBLE.h>
-// Set the same service UUID as in the Peripheral Device
-/*
-const char* deviceServiceUuid = "b83b6b32-0d38-45da-9a65-73eecc736b17";
-const char* AccXCharUuid  = "Acc-X-UUID";
-const char* AccYCharUuid  = "Acc-Y-UUID";
-const char* AccZCharUuid  = "Acc-Z-UUID";
-const char* GyroXCharUuid = "Gyr-X-UUID";
-const char* GyroYCharUuid = "Gyr-Y-UUID";
-const char* GyroZCharUuid = "Gyr-Z-UUID";
-*/
-// Set the same service UUID as in the Peripheral Device
-
+#define	size_of_struct 12000
+#define  chunk_size 128
 const char* deviceServiceUuid = "b83b6b32-0d38-45da-9a65-73eecc736b17";
 const char* AccXCharUuid = "22128dec-f7bc-4c21-a329-c13449221777";
 const char* AccYCharUuid = "677314b1-6d7d-4b38-8e37-0a3d24538c01";
@@ -54,7 +44,6 @@ void Init_BLE()
 
     Serial.println("IMU Peripheral (Sending Data)");
     //////////////////////////////////////////////////////////    
-
 }
 
 
