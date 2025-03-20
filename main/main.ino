@@ -1,8 +1,13 @@
+// EDO SOLVE
+//
+//
+//
 #include <CodeCell.h>
 #include"BLE_config.h"
 #include <BNO085.h>
 #include <led.h>
 #include <Timer_header.h>
+#include <capacitor.h>
 CodeCell myCodeCell;
 
 float Roll = 0.0;
@@ -33,7 +38,7 @@ void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activi
 
 void setup() {
     Serial.begin(115200);
-    //while(!Serial); 
+    while(!Serial); 
     led_init();
     IMU_Init(IMU_config,10,0xFFFFFFFF);
     Init_BLE();
@@ -75,19 +80,16 @@ void loop()
       //read_acceleration();
       //update_acc();
       //update_gyr();
-      IMU_read();
-      Data_IMU[0]=IMU_data[8];
-      Data_IMU[1]=IMU_data[9];
-      Data_IMU[2]=IMU_data[10];
-      Data_IMU[3]=IMU_data[11];
-      Data_IMU[4]=IMU_data[12];
-      Data_IMU[5]=IMU_data[13];
-      Show_IMU_data_UART(Data_IMU);
+      //IMU_read();
+      //Data_IMU[0]=IMU_data[8];
       //Serial.printf("TimeStamp: %i, ", time_stamp_var);
-      Serial.print("TimeStamp: "); Serial.print(time_stamp_var); Serial.print(", ");
+      //Serial.print("TimeStamp: "); Serial.print(time_stamp_var); Serial.print(", ");
+      solve(); 
+
       LED(100u,100u,100u);// device connected and sending data 
 
     }
+    LED(0,0,0);
 
   }
 
@@ -206,7 +208,7 @@ void IMU_read()
       }
     }
   //time_stamp_var=IMU.getTimeStamp();
-    time_stamp_var=get_time_us();
+    //time_stamp_var=get_time_us();
   }
   //Wire.endTransmission(false);
 
