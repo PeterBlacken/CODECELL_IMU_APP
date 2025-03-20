@@ -2,6 +2,7 @@
 #include"BLE_config.h"
 #include <BNO085.h>
 #include <led.h>
+#include <Timer_header.h>
 CodeCell myCodeCell;
 
 float Roll = 0.0;
@@ -19,7 +20,7 @@ float aceletation_matrix[3];
 float magnetometer_matrix[3];
 int acc_rot=0;
 int acc_acc=0;
-uint64_t time_stamp_var;
+int64_t time_stamp_var;
 float IMU_data[23]={0};
 
 bool err=0;
@@ -204,7 +205,8 @@ void IMU_read()
         return;
       }
     }
-  time_stamp_var=IMU.getTimeStamp();
+  //time_stamp_var=IMU.getTimeStamp();
+    time_stamp_var=get_time_us();
   }
   //Wire.endTransmission(false);
 
