@@ -22,12 +22,12 @@ const float tau= R*C;
 
 typedef struct 
 {
-	int64_t TimeStamp;
-	float	  Time_x;
+	int64_t timeStamp;
+	float	  time_x;
 	float	  solve_y;
-}Solve_element;
+}solve_element_t;
 
-typedef struct{Solve_element matrix[end_step];} solve_matrix;
+typedef struct{solve_element_t matrix[end_step];} solve_matrix_t;
 
 //float fx(float x){return (x*x)-2;}
 
@@ -35,25 +35,25 @@ float Dot_fx(float Vc){return (Vs-Vc)/(R*C);}
 
 void solve()
 {
-	solve_matrix m;
+	solve_matrix_t m;
 	Vc_n=Vc_0;	
 	
 	for (int step=0;step<end_step;step++)
 	{
 		m.matrix[step].solve_y=Vc_n;
-		m.matrix[step].Time_x=delta_time*step;
+		m.matrix[step].time_x=delta_time*step;
 		
 		Vc_n1=Vc_n+step*delta_time*Dot_fx(Vc_n);
 		
 		Vc_n=Vc_n1;
-		m.matrix[step].TimeStamp=get_time_us();
+		m.matrix[step].timeStamp=get_time_us();
 		
 	}
 	
 	Serial.print("END");	
 	for (int step=0; step<end_step ; step++)
 	{
-		Serial.printf("TimeStamp = %i uS, Time = %.5f, VC= %.5f step= %i \n",m.matrix[step].TimeStamp, m.matrix[step].Time_x,m.matrix[step].solve_y,step);
+		Serial.printf("TimeStamp = %i uS, Time = %.5f, VC= %.5f step= %i \n",m.matrix[step].timeStamp, m.matrix[step].time_x,m.matrix[step].solve_y,step);
 		//delay(200);
 	}
 
