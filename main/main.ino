@@ -46,27 +46,19 @@ void setup() {
     IMU_Init(IMU_config,10,0xFFFFFFFF);
     Init_BLE();
     
-    //if(err==1)
-    //{
-    //  while(1){LED(100,0,0);delay(100);}
-    //}
-    /*
-    if (!BLE.begin()) {
-    Serial.println("starting Bluetooth® Low Energy module failed!");
-    while (1);}
-
-    Serial.print("BLE iniciado")
+    if(err==1)
+    {
+      while(1){LED(100,0,0);delay(100);}
+    }
     
-    BLE.setLocalName("CodeCell- IMU Test");
-    BLE.setAdvertisedService(IMUService);
-    */
 
-    Serial.printf("Size of m matrix with 10 elements = %ld ",sizeof(m));
-    Serial.printf("Size of m matrix with 1 elements = %ld ", sizeof(m1));
-    
+    //Serial.printf("Size of m matrix with 10 elements = %ld ",sizeof(m));
+    //Serial.printf("Size of m matrix with 1 elements = %ld ", sizeof(m1)); 
     // the maths where right, 1 elements uses 16bytes and 10 used 160bytes(lol)
     // but the compiler does'nt add extra bytes to the struct
-    delay(10000);
+    
+    solve(); 
+    delay(3000);
 
 }
 
@@ -84,37 +76,54 @@ void loop()
       
     while(central.connected()) 
     {
-      //read_rotation_vector();
-      //read_acceleration();
-      //update_acc();
-      //update_gyr();
-      //IMU_read();
-      //Data_IMU[0]=IMU_data[8];
-      //Serial.printf("TimeStamp: %i, ", time_stamp_var);
-      //Serial.print("TimeStamp: "); Serial.print(time_stamp_var); Serial.print(", ");
-      solve(); 
 
+
+       // Convertir el struct en un string JSON
+       char buffer[200];  // Asegúrate de ajustar el tamaño
+       snprintf(buffer, sizeof(buffer), "{\"matrix\":[");
+       
+       for (int i = 0; i < size_of_struct; i++) {
+           char temp[50]; // Espacio para cada elemento
+           snprintf(temp, sizeof(temp), 
+                   "{\"ts\":%lld,\"x\":%.2f,\"y\":%.2f}%s", 
+                   m0.matrix[i].timeStamp, 
+                   m0.matrix[i].time_x, 
+                   m0.matrix[i].solve_y, 
+                   (i < size_of_struct - 1) ? "," : ""); // Evitar coma al final
+
+           strncat(buffer, temp, sizeof(buffer) - strlen(buffer) - 1);
+       }
+       strncat(buffer, "]}", sizeof(buffer) - strlen(buffer) - 1);
+
+      sensorCharacteristic.writeValue(buffer);
       LED(100u,100u,100u);// device connected and sending data 
+      
+      char buffer1[200];  // Asegúrate de ajustar el tamaño
+       snprintf(buffer1, sizeof(buffer1), "{\"matrix\":[");
+       
+       for (int i = 0; i < size_of_struct; i++) {
+           char temp1[50]; // Espacio para cada elemento
+           snprintf(temp1, sizeof(temp1), 
+                   "{\"ts\":%lld,\"x\":%.2f,\"y\":%.2f}%s", 
+                   m1.matrix[i].timeStamp, 
+                   m1.matrix[i].time_x, 
+                   m1.matrix[i].solve_y, 
+                   (i < size_of_struct - 1) ? "," : ""); // Evitar coma al final
 
+           strncat(buffer1, temp1, sizeof(buffer1) - strlen(buffer1) - 1);
+       }
+       strncat(buffer1, "]}", sizeof(buffer1) - strlen(buffer1) - 1);
+
+     
+      sensorCharacteristic.writeValue(buffer1);
+
+      //sensorCharacteristic.writeValue(&m1,sizeof(solve_matrix_t));
+      
     }
     LED(0,0,0);
 
   }
-
-      /*
-    read_rotation_vector();
-    read_acceleration();
-    
-    if(acc_rot>=2 && acc_acc>=2)
-    {
-      Rotation_deg(Roll,Pitch,Yaw);
-      Serial.printf("X: %.2f m/s^2, Y: %.2f m/s^2, Z: %.2f m/s^2", aceletation_matrix[0], aceletation_matrix[1], aceletation_matrix[2]);
-      Serial.printf("Roll: %.2f°, Pitch: %.2f°, Yaw: %.2f°\n", Roll, Pitch, Yaw);
-    }
-
    
-   delay(10);
-  */
 
 }
 
