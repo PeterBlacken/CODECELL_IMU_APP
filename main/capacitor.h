@@ -22,15 +22,19 @@ const float tau= R*C;
 
 typedef struct 
 {
-	int64_t timeStamp; //
-	float	  time_x;	 //
-	float	  solve_y;   //
-}solve_element_t;
+	int64_t timeStamp; // 8bytes
+	float	  time_x;	 // 4Bytes
+	float	  solve_y;   // 4Bytes
+}solve_element_t; //16 bytes per matrix 
 
 typedef struct{solve_element_t matrix[end_step];} solve_matrix_t;
-
 static solve_matrix_t m; // asigno el struct a la memoria static dynamica porque o si no la stack se overflow
 //float fx(float x){return (x*x)-2;}
+
+
+typedef struct{solve_element_t matrix[1];} size_matrix_t;
+static size_matrix_t m1;
+
 
 float Dot_fx(float Vc){return (Vs-Vc)/(R*C);}
 
@@ -44,7 +48,7 @@ void solve()
 		m.matrix[step].time_x=delta_time*step;
 		
 		Vc_n1=Vc_n+step*delta_time*Dot_fx(Vc_n);
-		
+	
 		Vc_n=Vc_n1;
 		m.matrix[step].timeStamp=get_time_us();
 		

@@ -1,6 +1,6 @@
 
 #include <ArduinoBLE.h>
-#define	size_of_struct 12000
+#define	size_of_struct 10
 #define  chunk_size 128
 const char* deviceServiceUuid = "b83b6b32-0d38-45da-9a65-73eecc736b17";
 const char* AccXCharUuid = "22128dec-f7bc-4c21-a329-c13449221777";

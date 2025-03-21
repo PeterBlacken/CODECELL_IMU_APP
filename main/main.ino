@@ -37,7 +37,8 @@ BNO085 IMU;
 void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activitiesToEnable = 0xFFFFFFFF);
 
 //const int size_of_struct= 200;
-
+//Testeare tamaño de las struct y matrices de struct para saber como enviar 
+//chuncks de data por BLE
 void setup() {
     Serial.begin(115200);
     while(!Serial); 
@@ -45,10 +46,10 @@ void setup() {
     IMU_Init(IMU_config,10,0xFFFFFFFF);
     Init_BLE();
     
-    if(err==1)
-    {
-      while(1){LED(100,0,0);delay(100);}
-    }
+    //if(err==1)
+    //{
+    //  while(1){LED(100,0,0);delay(100);}
+    //}
     /*
     if (!BLE.begin()) {
     Serial.println("starting Bluetooth® Low Energy module failed!");
@@ -60,7 +61,12 @@ void setup() {
     BLE.setAdvertisedService(IMUService);
     */
 
-    delay(3000);
+    Serial.printf("Size of m matrix with 10 elements = %ld ",sizeof(m));
+    Serial.printf("Size of m matrix with 1 elements = %ld ", sizeof(m1));
+    
+    // the maths where right, 1 elements uses 16bytes and 10 used 160bytes(lol)
+    // but the compiler does'nt add extra bytes to the struct
+    delay(10000);
 
 }
 
