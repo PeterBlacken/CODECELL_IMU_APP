@@ -95,7 +95,6 @@ void loop()
 
   }
 
-
       /*
     read_rotation_vector();
     read_acceleration();

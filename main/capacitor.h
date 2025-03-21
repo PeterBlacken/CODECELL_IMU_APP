@@ -22,9 +22,9 @@ const float tau= R*C;
 
 typedef struct 
 {
-	int64_t timeStamp;
-	float	  time_x;
-	float	  solve_y;
+	int64_t timeStamp; //
+	float	  time_x;	 //
+	float	  solve_y;   //
 }solve_element_t;
 
 typedef struct{solve_element_t matrix[end_step];} solve_matrix_t;
