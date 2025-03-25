@@ -1,3 +1,4 @@
+#pragma once
 #include <esp_sntp.h>
 
 struct timeval tv_now;

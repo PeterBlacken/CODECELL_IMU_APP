@@ -1,6 +1,27 @@
 #pragma once
 #include <Arduino.h>
 #include <cstdint>
+#include <Timer_header.h>
+#define IMU_MS_UPDATE 8 // 125hz refresh rate to IMU
+
+//Struct para almacenar los datos tomados por el IMU
+typedef struct 
+{
+	int64_t time_stamp;
+	float	  acc_x;
+	float	  acc_y;
+	float	  acc_z;
+	float	  gyr_x;
+	float	  gyr_y;
+	float	  gyr_z;
+	float	  mag_x;
+	float	  mag_y;
+	float	  mag_z;
+}IMU_data_t;
+
+
+//typedef struct{solve_element_t matrix[end_step];} solve_matrix_t;
+//static solve_matrix_t m;
 
 
 float Roll = 0.0;
@@ -17,7 +38,7 @@ float aceletation_matrix[3];
 float magnetometer_matrix[3];
 int acc_rot=0;
 int acc_acc=0;
-int64_t time_stamp_var;
+//int64_t time_stamp_var;
 float IMU_data[23]={0};
 
 bool err=0;
@@ -26,7 +47,10 @@ uint16_t _step_data = 0;
 uint8_t _mstate_data = 0;
 uint8_t _activity_data = 0;
 BNO085 IMU;
+
 void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activitiesToEnable = 0xFFFFFFFF);
+
+
 
 void update_acc()
 {
@@ -42,10 +66,11 @@ void update_gyr()
   GyroZChar.writeValue(String(RIJK[3]));
 }
 
-void IMU_read()
+void IMU_read(float IMU_data[],int64_t *time_stamp_var)
 {
   bool error_flag=1;
   uint8_t imu_read_timer=0U;
+  int64_t time_temp;
   _tap_data=false;
 
   while (IMU.getSensorEvent() == true) {
@@ -125,12 +150,16 @@ void IMU_read()
       }
     }
   //time_stamp_var=IMU.getTimeStamp();
-    //time_stamp_var=get_time_us();
+ time_temp=get_time_us();
+ *time_stamp_var=time_temp;
+  //time_stamp_var=get_time_us();
+	//get_time_us(&time_stamp_var);
   }
   //Wire.endTransmission(false);
 
 }
 
+/*
 void read_acceleration()
 {
 
@@ -142,7 +171,7 @@ void read_acceleration()
     time_stamp_var=IMU.getTimeStamp();
   }
 }
-
+*/
 
 void read_rotation_vector()
 {

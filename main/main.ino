@@ -3,6 +3,12 @@
 //  -Implementer Rtos task for led control
 //  Created a new header for IMU funtions and variable
 //  implemented while for initialized IMU, try until works (needs debugging) 
+//  modification to function IMU_read(float,*uint64_t). Now you pass var by reference
+//  this modification was made to work with a Task();
+//  Created TaskReadIMUData()
+//  Created TaskSerialShow() 
+// IT WORKSSSSSSS taking  from the IMU in one task and showing the data in other different Task
+//
 //
 #include <CodeCell.h>
 #include"BLE_config.h"
@@ -10,7 +16,7 @@
 #include <imu_header.h>
 #include <led.h>
 #include <Timer_header.h>
-#include <capacitor.h>
+//#include <capacitor.h>
 #include <Rtos_Task.h>
 
 CodeCell myCodeCell;
