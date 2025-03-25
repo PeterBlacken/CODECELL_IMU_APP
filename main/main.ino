@@ -78,6 +78,7 @@ void loop()
     {
 
 
+      
        // Convertir el struct en un string JSON
        char buffer[200];  // Asegúrate de ajustar el tamaño
        snprintf(buffer, sizeof(buffer), "{\"matrix\":[");
@@ -85,7 +86,7 @@ void loop()
        for (int i = 0; i < size_of_struct; i++) {
            char temp[50]; // Espacio para cada elemento
            snprintf(temp, sizeof(temp), 
-                   "{\"ts\":%lld,\"x\":%.2f,\"y\":%.2f}%s", 
+                   "{\"ts\":%lld,\"x\":%.5f,\"y\":%.5f}%s", 
                    m0.matrix[i].timeStamp, 
                    m0.matrix[i].time_x, 
                    m0.matrix[i].solve_y, 
@@ -97,14 +98,14 @@ void loop()
 
       sensorCharacteristic.writeValue(buffer);
       LED(100u,100u,100u);// device connected and sending data 
-      
+   delay(200); 
       char buffer1[200];  // Asegúrate de ajustar el tamaño
        snprintf(buffer1, sizeof(buffer1), "{\"matrix\":[");
        
        for (int i = 0; i < size_of_struct; i++) {
            char temp1[50]; // Espacio para cada elemento
            snprintf(temp1, sizeof(temp1), 
-                   "{\"ts\":%lld,\"x\":%.2f,\"y\":%.2f}%s", 
+                   "{\"ts\":%lld,\"x\":%.5f,\"y\":%.5f}%s", 
                    m1.matrix[i].timeStamp, 
                    m1.matrix[i].time_x, 
                    m1.matrix[i].solve_y, 
@@ -117,6 +118,7 @@ void loop()
      
       sensorCharacteristic.writeValue(buffer1);
 
+      delay(200); 
       //sensorCharacteristic.writeValue(&m1,sizeof(solve_matrix_t));
       
     }

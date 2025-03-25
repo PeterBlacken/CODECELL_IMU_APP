@@ -52,7 +52,7 @@ void Init_BLE()
 
     /////////////////////////BLE INIT///////////// 
 
-    BLE.setLocalName("CodeCell-IMU Test");
+    BLE.setLocalName("IMU");
     BLE.setAdvertisedService(IMUService);
 	 /////////////////////
 	 BLE.setAdvertisedService(sensorService); //se agrega el servicio para enviar matrix
