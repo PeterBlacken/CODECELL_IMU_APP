@@ -2,6 +2,7 @@
 #include "imu_header.h"
 #include <Arduino.h>
 #include <cstddef>
+#include <cstdint>
 //#include <imu_header.h>
 // Handlers
 TaskHandle_t LED_Task_Handle = NULL; 
@@ -48,7 +49,7 @@ void init_freertos_tasks()
 
 
 	xTaskCreate(TaskLEDTest,"TaskGlowLed",1000,NULL,1,&LED_Task_Handle);
-	xTaskCreate(TaskReadIMUData,"TaskIMURead",2048,NULL,1,&Task_IMURead_Handle);
+	xTaskCreate(TaskReadIMUData,"TaskIMURead",2048,NULL,5,&Task_IMURead_Handle);
 	xTaskCreate(TaskSerialShow,"TaskSerialShow",2048,NULL,1,&Task_SerialShow_Handle);
 
 }
@@ -81,7 +82,8 @@ void TaskReadIMUData(void *pvParameters)
 	while(true)
 	{
 		IMU_read(IMU_snapshot, &time_stamp_var);
-		
+	
+		//MUY OPTIMIZABLE REHACER PARAR PASAR POR REFERENCIA.
 		dato.time_stamp=time_stamp_var;
 		dato.acc_x = IMU_snapshot[8];
 		dato.acc_y = IMU_snapshot[9];
@@ -94,7 +96,8 @@ void TaskReadIMUData(void *pvParameters)
 		dato.mag_z = IMU_snapshot[16];
 
 		if(xQueueSend(IMU_fifo,&dato,portMAX_DELAY)==pdPASS)
-		{Serial.println("data added to FIFO ");}
+		{//Serial.println("data added to FIFO ");
+		 }
 		else{Serial.println("FIFO FULL");}
 		vTaskDelay(pdMS_TO_TICKS(IMU_MS_UPDATE));
 	
@@ -107,13 +110,20 @@ void TaskReadIMUData(void *pvParameters)
 void TaskSerialShow(void *pvParameters)
 {
 	IMU_data_t d;
+	int64_t time_n=0;
+	int64_t time_n1=0;;
+
 
 	while(true)
 	{
+		time_n=d.time_stamp;
 		if(xQueueReceive(IMU_fifo,&d,portMAX_DELAY)==pdPASS)
 		{
-			Serial.printf("time= %lld, ax = %f, ay= %f, az=%f, gx=%f, gy=%f, gz=%f, mx=%f, my=%f, mz=%f ",d.time_stamp,d.acc_x,d.acc_y,d.acc_z,d.gyr_x,d.gyr_y,d.gyr_z,d.mag_x,d.mag_y,d.mag_z);
+			//Serial.printf("time= %lld, ax = %f, ay= %f, az=%f, gx=%f, gy=%f, gz=%f, mx=%f, my=%f, mz=%f ",d.time_stamp,d.acc_x,d.acc_y,d.acc_z,d.gyr_x,d.gyr_y,d.gyr_z,d.mag_x,d.mag_y,d.mag_z);
+			time_n1=d.time_stamp;
 		}
+		Serial.printf("tiempo entre muestra= %lld \n ", time_n1-time_n);
+
 	}
 
 

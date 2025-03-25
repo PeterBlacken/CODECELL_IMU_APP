@@ -1,0 +1,53 @@
+25 Mar 2025
+To do list:
+      -
+      - Escribir correo cuencas
+		- FreeRtos
+				-agregar FreeRtos
+				x crear tarea tomar datos del IMU 120hz
+				- crear tarea Bluetooth
+				X Tarea control del LED
+				x Cuenca premium de chatgpt 
+
+Bitacora:
+
+      - Se cerro la rama del repo send-edo-send-struct esta se merge con la rama de la cual nacio. Send-edo
+		- Se creo la rama FreeRtos para iniciar su implementación en el codigo
+
+		- En FreeRtos es necesario ocupar el While(true) en la función, de otro manera, la tarea se ejecutará una sola vez. Pero hay herramientas para el trabajo de la tarea y que esta haga lo que tenemos que hacer en cada momento
+
+		-El uso del Handler es importante para el manero de la tarea.
+
+		-vTaskSuspend(Handler)
+		-vTaskResume(Handler)
+		-vTaskDelete(Handler)
+
+		-Estas funciones pueden ser utiles para el manejo de las tareas y se pueden ocupar en cualquier parte, inclusive dentro de las tareas 
+		
+		- Creación de tarea:
+xTaskCreate(
+  tareaFuncion,      // Función de la tarea
+  "NombreTarea",     // Nombre identificador
+  1000,              // Tamaño de la pila
+  NULL,              // Parámetro (puedes pasar datos)
+  1,                 // Prioridad
+  NULL               // Handle (opcional, para referenciar luego)
+);
+		- 
+xQueueCreate()	Crea una cola con un tamaño y tipo de dato fijo
+xQueueSend()	Envia un dato a la cola (desde una tarea o ISR)
+xQueueReceive()	Recibe un dato de la cola (bloquea hasta que haya datos si querés)
+xQueuePeek()	Mira el dato sin sacarlo de la cola
+
+
+		- Lo logre!!! cree distintas Task, la primera toma datos del IMU a 125hz y lo guarda en un FIFO para su uso 
+		- La siguiente Task toma los datos del Task y los visualiza mediante Serial
+
+		- el FreeRtos no es tan dificil como parece,
+
+
+		- Despues de calculos rapidos, al parecer estoy sacando cerca de 85hz de sampleo del IMU. Hay que estudiar si es posible sacar mas, minimo 125 y ojala los 500hz que teoricamente da el chip. 
+
+		-Estoy una victoria agridulce. Quizás debería re hacer la función que toma los datos del IMU y que optimice el envio de datos al FIFO  
+		- Tengo que estudiar como ocupar los interrupt en freeRtos para tomar los datos de la tarea en tiempo exactos 
+		-
