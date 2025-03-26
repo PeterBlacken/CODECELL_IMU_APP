@@ -3,11 +3,13 @@
 #include <Arduino.h>
 #include <cstddef>
 #include <cstdint>
+#include <util.h>
 //#include <imu_header.h>
 // Handlers
 TaskHandle_t LED_Task_Handle = NULL; 
 TaskHandle_t Task_IMURead_Handle = NULL;
 TaskHandle_t Task_SerialShow_Handle = NULL;
+TaskHandle_t Task_BLE_Handle = NULL;
 // Queues
 QueueHandle_t IMU_fifo;
 
@@ -36,6 +38,7 @@ QueueHandle_t IMU_fifo;
 void TaskLEDTest(void *pvParameters);
 void TaskReadIMUData(void*pvParameters);
 void TaskSerialShow(void *pvParameters);
+void TaskBLE(void *pvParameters);
 
 ////////////////////////////////Init Task///////////////////////////////////
 
@@ -48,10 +51,14 @@ void init_freertos_tasks()
 
 
 
-	xTaskCreate(TaskLEDTest,"TaskGlowLed",1000,NULL,1,&LED_Task_Handle);
-	xTaskCreate(TaskReadIMUData,"TaskIMURead",2048,NULL,5,&Task_IMURead_Handle);
-	xTaskCreate(TaskSerialShow,"TaskSerialShow",2048,NULL,1,&Task_SerialShow_Handle);
+	//xTaskCreate(TaskLEDTest,"TaskGlowLed",1000,NULL,1,&LED_Task_Handle);
+	//vTaskSuspend(LED_Task_Handle); // pause the Task
 
+	xTaskCreate(TaskReadIMUData,"TaskIMURead",2048,NULL,5,&Task_IMURead_Handle);
+	//xTaskCreate(TaskSerialShow,"TaskSerialShow",2048,NULL,1,&Task_SerialShow_Handle);	
+	//vTaskSuspend(Task_SerialShow_Handle); // pause the Task
+
+	xTaskCreate(TaskBLE,"TaskBLE",5096,NULL,23,&Task_BLE_Handle);
 }
 
 
@@ -79,6 +86,7 @@ void TaskReadIMUData(void *pvParameters)
 	float IMU_snapshot[23];
 	int64_t time_stamp_var;
 
+
 	while(true)
 	{
 		IMU_read(IMU_snapshot, &time_stamp_var);
@@ -103,6 +111,52 @@ void TaskReadIMUData(void *pvParameters)
 	
 	}
 }
+///////////////////// TaskBLE//////////////////////
+// Es recomendable que el stack ocupado por el BLE este inicializado antes de
+// su uso, por ende, ojala iniciarlo en el setup o antes del bucle principal
+// de la TASK
+void TaskBLE(void *pvParameters)
+{
+   IMU_data_t d;
+	vTaskSuspend(Task_IMURead_Handle);
+	char buffer[sizeof(IMU_data_t)+10];
+
+	while (true) 
+	{
+	
+  	 	BLEDevice central = BLE.central();
+  		rainbow(); // rainbow led till the Bluetooth is connected
+
+  		if (central) 
+  		{
+  		  Serial.println("Connected to central device");
+  		  Serial.print("Device MAC address: ");
+  		  Serial.println(central.address());	    
+  		  LED(100u,100u,100u);// device connected and sending data 
+  		  while(central.connected()) 
+  		  {
+			  
+			 vTaskResume(Task_IMURead_Handle);
+			 
+			 if(xQueueReceive(IMU_fifo,&d,portMAX_DELAY)==pdPASS)
+			 {
+				 imuDataToCSV_char(&d,buffer,sizeof(buffer));
+				 sensorCharacteristic.writeValue(buffer);	
+				 
+			 }
+			 
+  		
+  		  }
+  		  LED(0,0,0);
+  		
+  		}
+
+	}
+}
+
+
+
+
 
 ////////////////////////////////////
 /// 
@@ -117,6 +171,7 @@ void TaskSerialShow(void *pvParameters)
 	while(true)
 	{
 		time_n=d.time_stamp;
+		//cambiar por xQueuePeek(cola,&var,timeout) Esta función lee el dato sin sacarlo del buffer 
 		if(xQueueReceive(IMU_fifo,&d,portMAX_DELAY)==pdPASS)
 		{
 			//Serial.printf("time= %lld, ax = %f, ay= %f, az=%f, gx=%f, gy=%f, gz=%f, mx=%f, my=%f, mz=%f ",d.time_stamp,d.acc_x,d.acc_y,d.acc_z,d.gyr_x,d.gyr_y,d.gyr_z,d.mag_x,d.mag_y,d.mag_z);
@@ -128,6 +183,7 @@ void TaskSerialShow(void *pvParameters)
 
 
 }
+
 
 
 

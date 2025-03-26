@@ -51,7 +51,7 @@ BNO085 IMU;
 void IMU_Init(uint32_t config, uint16_t timeBetweenReports = 10, uint32_t activitiesToEnable = 0xFFFFFFFF);
 
 
-
+/*
 void update_acc()
 {
   AccXChar.writeValue(String(aceletation_matrix[0]));
@@ -65,7 +65,7 @@ void update_gyr()
   GyroYChar.writeValue(String(RIJK[2]));
   GyroZChar.writeValue(String(RIJK[3]));
 }
-
+*/
 void IMU_read(float IMU_data[],int64_t *time_stamp_var)
 {
   bool error_flag=1;

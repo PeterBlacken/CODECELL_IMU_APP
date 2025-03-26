@@ -10,6 +10,7 @@
 // IT WORKSSSSSSS taking  from the IMU in one task and showing the data in other different Task
 //
 //
+//#include <util.h>
 #include <CodeCell.h>
 #include"BLE_config.h"
 #include <BNO085.h>
@@ -42,18 +43,6 @@ void setup() {
 
     Init_BLE();
     init_freertos_tasks();
-    /*
-    if (!BLE.begin()) {
-    Serial.println("starting Bluetooth® Low Energy module failed!");
-    while (1);}
-
-    Serial.print("BLE iniciado")
-    
-    BLE.setLocalName("CodeCell- IMU Test");
-    BLE.setAdvertisedService(IMUService);
-    */
-
-    //delay(3000);
 
 }
 
