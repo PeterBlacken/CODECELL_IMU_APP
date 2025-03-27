@@ -1,17 +1,9 @@
 
 #include <ArduinoBLE.h>
-// Set the same service UUID as in the Peripheral Device
-/*
-const char* deviceServiceUuid = "b83b6b32-0d38-45da-9a65-73eecc736b17";
-const char* AccXCharUuid  = "Acc-X-UUID";
-const char* AccYCharUuid  = "Acc-Y-UUID";
-const char* AccZCharUuid  = "Acc-Z-UUID";
-const char* GyroXCharUuid = "Gyr-X-UUID";
-const char* GyroYCharUuid = "Gyr-Y-UUID";
-const char* GyroZCharUuid = "Gyr-Z-UUID";
-*/
-// Set the same service UUID as in the Peripheral Device
+#define	size_of_struct 12000
+#define  chunk_size 128
 
+/*
 const char* deviceServiceUuid = "b83b6b32-0d38-45da-9a65-73eecc736b17";
 const char* AccXCharUuid = "22128dec-f7bc-4c21-a329-c13449221777";
 const char* AccYCharUuid = "677314b1-6d7d-4b38-8e37-0a3d24538c01";
@@ -30,6 +22,12 @@ BLEStringCharacteristic AccZChar(AccZCharUuid, BLERead | BLENotify,20);
 BLEStringCharacteristic GyroXChar(GyroXCharUuid, BLERead | BLENotify,20);
 BLEStringCharacteristic GyroYChar(GyroYCharUuid, BLERead | BLENotify,20);
 BLEStringCharacteristic GyroZChar(GyroZCharUuid, BLERead | BLENotify,20);
+*/
+
+const char* matrixUUID= "180C";
+BLEService sensorService(matrixUUID);
+BLEStringCharacteristic sensorCharacteristic(matrixUUID,BLERead | BLENotify,128);
+
 
 void Init_BLE()
 {
@@ -41,8 +39,16 @@ void Init_BLE()
 
     /////////////////////////BLE INIT///////////// 
 
-    BLE.setLocalName("CodeCell- IMU Test");
-    BLE.setAdvertisedService(IMUService);
+    BLE.setLocalName("CodeCell-IMU Test");
+    //BLE.setAdvertisedService(IMUService);
+	 /////////////////////
+	 BLE.setAdvertisedService(sensorService); //se agrega el servicio para enviar matrix
+	 sensorService.addCharacteristic(sensorCharacteristic);
+	 BLE.addService(sensorService);
+
+	 sensorCharacteristic.writeValue("0");	 
+	 /*
+	 BLE.setAdvertisedService(IMUService);
     IMUService.addCharacteristic(AccXChar);
     IMUService.addCharacteristic(AccYChar);
     IMUService.addCharacteristic(AccZChar);
@@ -50,11 +56,12 @@ void Init_BLE()
     IMUService.addCharacteristic(GyroYChar);
     IMUService.addCharacteristic(GyroZChar);
     BLE.addService(IMUService);
-    BLE.advertise();
+    */
+
+	 BLE.advertise();
 
     Serial.println("IMU Peripheral (Sending Data)");
     //////////////////////////////////////////////////////////    
-
 }
 
 

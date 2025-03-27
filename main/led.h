@@ -38,17 +38,18 @@ void led_init()
   delay(80);
 }
 
+// change for not blocking
 void rainbow()
 {
   LED(0, 0, 0);
-  delay(1);
+  vTaskDelay(pdMS_TO_TICKS(1));
   LED(0, 0, rainbow_brig);
-  delay(80);
+  vTaskDelay(pdMS_TO_TICKS(80));
   LED(rainbow_brig, 0, 0);
-  delay(80);
+  vTaskDelay(pdMS_TO_TICKS(80));
   LED(0, rainbow_brig, 0);
-  delay(80);
+  vTaskDelay(pdMS_TO_TICKS(80));
   LED(0, 0, 0);
-  delay(80);
+  vTaskDelay(pdMS_TO_TICKS(80));
 }
 
