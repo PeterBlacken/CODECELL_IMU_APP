@@ -52,4 +52,17 @@ void rainbow()
   LED(0, 0, 0);
   vTaskDelay(pdMS_TO_TICKS(80));
 }
-
+// change for not blocking
+void rainbow_error()
+{
+  LED(0, 0, 0);
+  vTaskDelay(pdMS_TO_TICKS(1));
+  LED(0, 0, rainbow_brig);
+  vTaskDelay(pdMS_TO_TICKS(1080));
+  LED(rainbow_brig, 0,  rainbow_brig);
+  vTaskDelay(pdMS_TO_TICKS(80));
+  LED(0, rainbow_brig, rainbow_brig);
+  vTaskDelay(pdMS_TO_TICKS(1080));
+  LED(0, 0, 0);
+  vTaskDelay(pdMS_TO_TICKS(1080));
+}

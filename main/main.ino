@@ -28,7 +28,7 @@ bool sendVariable[6] = {false, false, false, false, false, false}; // Estados de
 
 void setup() {
     Serial.begin(115200);
-    while(!Serial); 
+    //while(!Serial); 
     led_init();
     IMU_Init(IMU_config,10,0xFFFFFFFF);
     
@@ -38,6 +38,7 @@ void setup() {
       delay(100);
       err=0;
       IMU_Init(IMU_config,10,0xFFFFFFFF);
+      rainbow_error();
       //while(1){LED(100,0,0);delay(100);}
     }
 

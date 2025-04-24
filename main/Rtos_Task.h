@@ -10,13 +10,16 @@ TaskHandle_t LED_Task_Handle = NULL;
 TaskHandle_t Task_IMURead_Handle = NULL;
 TaskHandle_t Task_SerialShow_Handle = NULL;
 TaskHandle_t Task_BLE_Handle = NULL;
+TaskHandle_t Task_Monitor_Handle		 = NULL;
+TaskHandle_t Task_QueueMonitor_Handle= NULL;
+
 // Queues
 QueueHandle_t IMU_fifo;
 
 
 
 // defines
-#define FIFO_SIZE 125
+#define FIFO_SIZE 1250
 
 // usefull funtions
 //
@@ -39,7 +42,8 @@ void TaskLEDTest(void *pvParameters);
 void TaskReadIMUData(void*pvParameters);
 void TaskSerialShow(void *pvParameters);
 void TaskBLE(void *pvParameters);
-
+void TaskMonitor(void *pvParameters);
+void TaskQueueMonitor(void *pvParameters);
 ////////////////////////////////Init Task///////////////////////////////////
 
 void init_freertos_tasks()
@@ -54,11 +58,15 @@ void init_freertos_tasks()
 	//xTaskCreate(TaskLEDTest,"TaskGlowLed",1000,NULL,1,&LED_Task_Handle);
 	//vTaskSuspend(LED_Task_Handle); // pause the Task
 
-	xTaskCreate(TaskReadIMUData,"TaskIMURead",2048,NULL,5,&Task_IMURead_Handle);
+	xTaskCreate(TaskReadIMUData,"TaskIMURead",4096,NULL,5,&Task_IMURead_Handle);
 	//xTaskCreate(TaskSerialShow,"TaskSerialShow",2048,NULL,1,&Task_SerialShow_Handle);	
 	//vTaskSuspend(Task_SerialShow_Handle); // pause the Task
 
 	xTaskCreate(TaskBLE,"TaskBLE",5096,NULL,23,&Task_BLE_Handle);
+
+		//task monitor
+	xTaskCreate(TaskMonitor, "TaskMonitor", 2048, NULL, 1, NULL);
+	xTaskCreate(TaskQueueMonitor, "QueueMonitor", 2048, NULL, 1, NULL);
 }
 
 
@@ -118,36 +126,37 @@ void TaskReadIMUData(void *pvParameters)
 void TaskBLE(void *pvParameters)
 {
    IMU_data_t d;
-	vTaskSuspend(Task_IMURead_Handle);
 	char buffer[sizeof(IMU_data_t)+10];
 
+	vTaskSuspend(Task_IMURead_Handle);
 	while (true) 
 	{
-	
-  	 	BLEDevice central = BLE.central();
+  	 	//BLEDevice central = BLE.central();
   		rainbow(); // rainbow led till the Bluetooth is connected
 
-  		if (central) 
+  		if(NimBLEDevice::getServer()->getConnectedCount())
   		{
+				
   		  Serial.println("Connected to central device");
   		  Serial.print("Device MAC address: ");
-  		  Serial.println(central.address());	    
-  		  LED(100u,100u,100u);// device connected and sending data 
-  		  while(central.connected()) 
-  		  {
-			  
-			 vTaskResume(Task_IMURead_Handle);
-			 
-			 if(xQueueReceive(IMU_fifo,&d,portMAX_DELAY)==pdPASS)
-			 {
-				 imuDataToCSV_char(&d,buffer,sizeof(buffer));
-				 sensorCharacteristic.writeValue(buffer);	
-				 
-			 }
-			 
-  		
-  		  }
+  		  //Serial.println(central.address());	    
+		  vTaskResume(Task_IMURead_Handle);
+		  LED(1u,1u,1u);// device connected and sending data 
+  			while (NimBLEDevice::getServer()->getConnectedCount()) // Mientras siga conectado
+      	{
+        		if (xQueueReceive(IMU_fifo, &d, portMAX_DELAY) == pdPASS)
+        		{
+          		imuDataToCSV_char(&d, buffer, sizeof(buffer));
+
+          		// Enviar por BLE
+          		pSensorCharacteristic->setValue((uint8_t*)buffer, strlen(buffer));
+          		pSensorCharacteristic->notify(); // Notifica el valor actual
+        		}
+      	}
   		  LED(0,0,0);
+		  // Re advertising if get disconected
+		  Serial.print("Client disconected");
+		  NimBLEDevice::startAdvertising();
   		
   		}
 
@@ -167,7 +176,6 @@ void TaskSerialShow(void *pvParameters)
 	int64_t time_n=0;
 	int64_t time_n1=0;;
 
-
 	while(true)
 	{
 		time_n=d.time_stamp;
@@ -185,6 +193,82 @@ void TaskSerialShow(void *pvParameters)
 }
 
 
+//Task Monitor
+void TaskMonitor(void *pvParameters)
+{
+	while (true)
+	{
+		printf("\n====== MONITOR DE SISTEMA ======\n");
+
+		if (LED_Task_Handle)
+			printf("[LED Task]      Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(LED_Task_Handle),
+			       uxTaskGetStackHighWaterMark(LED_Task_Handle) * sizeof(StackType_t));
+		/*
+		if (Task_TaskManager_Handle)
+			printf("[TaskManager]   Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(Task_TaskManager_Handle),
+			       uxTaskGetStackHighWaterMark(Task_TaskManager_Handle) * sizeof(StackType_t));
+		
+		if (Task_ReadTime_Handle)
+			printf("[ReadTime]      Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(Task_ReadTime_Handle),
+			       uxTaskGetStackHighWaterMark(Task_ReadTime_Handle) * sizeof(StackType_t));
+		*/
+		if (Task_IMURead_Handle)
+			printf("[IMUReadData]   Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(Task_IMURead_Handle),
+			       uxTaskGetStackHighWaterMark(Task_IMURead_Handle) * sizeof(StackType_t));
+
+		if (Task_BLE_Handle)
+			printf("[BLE]           Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(Task_BLE_Handle),
+			       uxTaskGetStackHighWaterMark(Task_BLE_Handle) * sizeof(StackType_t));
+
+		if (LED_Task_Handle)
+			printf("[LED]           Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(LED_Task_Handle),
+			       uxTaskGetStackHighWaterMark(LED_Task_Handle) * sizeof(StackType_t));
+
+		if (Task_SerialShow_Handle)
+			printf("[SerialShow]    Prio: %2u | Stack libre min: %4u bytes\n",
+			       uxTaskPriorityGet(Task_SerialShow_Handle),
+			       uxTaskGetStackHighWaterMark(Task_SerialShow_Handle) * sizeof(StackType_t));
+
+		// HEAP
+		printf("\nHeap actual disponible: %u bytes\n", (unsigned int)esp_get_free_heap_size());
+		printf("Heap mínimo histórico:  %u bytes\n", (unsigned int)esp_get_minimum_free_heap_size());
+
+		printf("====================================\n");
+
+		vTaskDelay(pdMS_TO_TICKS(10000)); // cada 10 segundos
+	}
+}
+
+
+void TaskQueueMonitor(void *pvParameters)
+{
+	while (true)
+	{
+		printf("\n====== 📦 MONITOR DE COLAS FIFO ======\n");
+
+		if (IMU_fifo) {
+			UBaseType_t used = uxQueueMessagesWaiting(IMU_fifo);
+			UBaseType_t free = uxQueueSpacesAvailable(IMU_fifo);
+			printf("[IMU_fifo]         Ocupado: %2u | Libre: %2u | Total: %u\n", used, free, used + free);
+		}
+		/*
+		if (IMU_reduced_fifo) {
+			UBaseType_t used = uxQueueMessagesWaiting(IMU_reduced_fifo);
+			UBaseType_t free = uxQueueSpacesAvailable(IMU_reduced_fifo);
+			printf("[IMU_reduced_fifo] Ocupado: %2u | Libre: %2u | Total: %u\n", used, free, used + free);
+		}
+		*/
+		printf("=======================================\n");
+
+		vTaskDelay(pdMS_TO_TICKS(5000)); // cada 5 segundos
+	}
+}
 
 
 

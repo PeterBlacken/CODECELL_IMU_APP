@@ -1,67 +1,55 @@
-
-#include <ArduinoBLE.h>
+//#include <esp32-hal-bt.c>
+#include <NimBLEDevice.h>
 #define	size_of_struct 12000
 #define  chunk_size 128
 
-/*
-const char* deviceServiceUuid = "b83b6b32-0d38-45da-9a65-73eecc736b17";
-const char* AccXCharUuid = "22128dec-f7bc-4c21-a329-c13449221777";
-const char* AccYCharUuid = "677314b1-6d7d-4b38-8e37-0a3d24538c01";
-const char* AccZCharUuid = "648ae827-f439-4038-a8ed-88e67b2cbb33";
-const char* GyroXCharUuid = "07c120ff-3915-410b-9c45-c84533e674df";
-const char* GyroYCharUuid = "17a45678-jj34-5678-1234-56789ab34ef5";
-const char* GyroZCharUuid = "9f345678-dd34-5678-1234-56789a67def6";
-
-
-
-
-BLEService IMUService(deviceServiceUuid);
-BLEStringCharacteristic AccXChar(AccXCharUuid, BLERead | BLENotify,20);
-BLEStringCharacteristic AccYChar(AccYCharUuid, BLERead | BLENotify,20);
-BLEStringCharacteristic AccZChar(AccZCharUuid, BLERead | BLENotify,20);
-BLEStringCharacteristic GyroXChar(GyroXCharUuid, BLERead | BLENotify,20);
-BLEStringCharacteristic GyroYChar(GyroYCharUuid, BLERead | BLENotify,20);
-BLEStringCharacteristic GyroZChar(GyroZCharUuid, BLERead | BLENotify,20);
-*/
 
 const char* matrixUUID= "180C";
-BLEService sensorService(matrixUUID);
-BLEStringCharacteristic sensorCharacteristic(matrixUUID,BLERead | BLENotify,128);
+//BLEService sensorService(matrixUUID);
+//BLEStringCharacteristic sensorCharacteristic(matrixUUID,BLERead | BLENotify,128);
 
+// Creation of the server, service and characteristic for sending data
+static NimBLEServer* pServer = nullptr;
+static NimBLEService* pSensorService = nullptr;
+static NimBLECharacteristic* pSensorCharacteristic = nullptr;
 
 void Init_BLE()
 {
 
-   if (!BLE.begin()) {
-      Serial.println("starting Bluetooth® Low Energy module failed!");
-      while (1);}
-	Serial.printf("BLE Inicializado");
+	
 
-    /////////////////////////BLE INIT///////////// 
+  NimBLEDevice::init("CodeCell-IMU-Test");
 
-    BLE.setLocalName("CodeCell-IMU Test");
-    //BLE.setAdvertisedService(IMUService);
-	 /////////////////////
-	 BLE.setAdvertisedService(sensorService); //se agrega el servicio para enviar matrix
-	 sensorService.addCharacteristic(sensorCharacteristic);
-	 BLE.addService(sensorService);
+  NimBLEDevice::setMTU(256); //setMTU after init the BLEDEVICE XDD else crash 
+	if (!NimBLEDevice::setDeviceName("CodeCell-IMU Test")) 
+	{Serial.print("Name not changed");}
+  pServer = NimBLEDevice::createServer();
 
-	 sensorCharacteristic.writeValue("0");	 
-	 /*
-	 BLE.setAdvertisedService(IMUService);
-    IMUService.addCharacteristic(AccXChar);
-    IMUService.addCharacteristic(AccYChar);
-    IMUService.addCharacteristic(AccZChar);
-    IMUService.addCharacteristic(GyroXChar);
-    IMUService.addCharacteristic(GyroYChar);
-    IMUService.addCharacteristic(GyroZChar);
-    BLE.addService(IMUService);
-    */
+  // Crear servicio
+  pSensorService = pServer->createService(matrixUUID);
 
-	 BLE.advertise();
+  // Crear característica con notificación
+  pSensorCharacteristic = pSensorService->createCharacteristic(
+    matrixUUID,
+    NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
+  );
 
-    Serial.println("IMU Peripheral (Sending Data)");
-    //////////////////////////////////////////////////////////    
+  // Valor inicial
+  pSensorCharacteristic->setValue("0");
+
+  // Iniciar el servicio
+  pSensorService->start();
+
+  // Configurar publicidad
+  NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(pSensorService->getUUID());
+  ////pAdvertising->setScanResponse(true);
+  pAdvertising->enableScanResponse(true);
+  pAdvertising->start();
+
+  Serial.println("IMU Peripheral (Sending Data) - NimBLE iniciado");
+  Serial.printf("MTU = %i",NimBLEDevice::getMTU() );
+
 }
 
 
