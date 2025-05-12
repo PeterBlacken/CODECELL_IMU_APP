@@ -41,6 +41,7 @@ void setup() {
       rainbow_error();
       //while(1){LED(100,0,0);delay(100);}
     }
+    delay(4000);
 
     Init_BLE();
     init_freertos_tasks();

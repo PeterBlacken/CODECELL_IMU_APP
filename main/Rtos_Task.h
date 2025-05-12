@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <util.h>
+#include "ButterworthLPF.h" // added filter header
 //#include <imu_header.h>
 // Handlers
 TaskHandle_t LED_Task_Handle = NULL; 
@@ -12,12 +13,13 @@ TaskHandle_t Task_SerialShow_Handle = NULL;
 TaskHandle_t Task_BLE_Handle = NULL;
 TaskHandle_t Task_Monitor_Handle		 = NULL;
 TaskHandle_t Task_QueueMonitor_Handle= NULL;
-
+TaskHandle_t Task_FilterIMU_Handle = NULL;
 // Queues
 QueueHandle_t IMU_fifo;
+QueueHandle_t IMU_filter_fifo;
 
 
-
+ButterworthLPF lpf(2,2,125); // filter struct created
 // defines
 #define FIFO_SIZE 1250
 
@@ -44,34 +46,47 @@ void TaskSerialShow(void *pvParameters);
 void TaskBLE(void *pvParameters);
 void TaskMonitor(void *pvParameters);
 void TaskQueueMonitor(void *pvParameters);
+void TaskIMUFilter (void *pvParameters);
+void filtering(IMU_data_t dato);
 ////////////////////////////////Init Task///////////////////////////////////
 
 void init_freertos_tasks()
 {
 	IMU_fifo = xQueueCreate(FIFO_SIZE,sizeof(IMU_data_t));
 	if(IMU_fifo==NULL)
-	{Serial.print("error creating queue"); while(1);}
+	{Serial.print("error creating queue 1"); while(1);}
 	
+	IMU_filter_fifo = xQueueCreate(FIFO_SIZE,sizeof(float));
+	if(IMU_fifo==NULL)
+	{Serial.print("error creating queue 2"); while(1);}
 
 
 
 	//xTaskCreate(TaskLEDTest,"TaskGlowLed",1000,NULL,1,&LED_Task_Handle);
 	//vTaskSuspend(LED_Task_Handle); // pause the Task
 
-	xTaskCreate(TaskReadIMUData,"TaskIMURead",4096,NULL,5,&Task_IMURead_Handle);
+	xTaskCreate(TaskReadIMUData,"TaskIMURead",8096,NULL,5,&Task_IMURead_Handle);
 	//xTaskCreate(TaskSerialShow,"TaskSerialShow",2048,NULL,1,&Task_SerialShow_Handle);	
 	//vTaskSuspend(Task_SerialShow_Handle); // pause the Task
 
-	xTaskCreate(TaskBLE,"TaskBLE",5096,NULL,23,&Task_BLE_Handle);
+	//xTaskCreate(TaskBLE,"TaskBLE",5096,NULL,23,&Task_BLE_Handle);
 
 		//task monitor
-	xTaskCreate(TaskMonitor, "TaskMonitor", 2048, NULL, 1, NULL);
-	xTaskCreate(TaskQueueMonitor, "QueueMonitor", 2048, NULL, 1, NULL);
+	//xTaskCreate(TaskMonitor, "TaskMonitor", 2048, NULL, 1, NULL);
+	//xTaskCreate(TaskQueueMonitor, "QueueMonitor", 2048, NULL, 1, NULL);
 }
 
 
 
 //////////////////////////////Task declaration/////////////////////////////
+void TaskIMUFilter(void *pvParameters)
+{
+	while (true) 
+	{
+	
+	}
+
+}
 
 void TaskLEDTest(void *pvParameters)
 {
@@ -101,24 +116,37 @@ void TaskReadIMUData(void *pvParameters)
 	
 		//MUY OPTIMIZABLE REHACER PARAR PASAR POR REFERENCIA.
 		dato.time_stamp=time_stamp_var;
-		dato.acc_x = IMU_snapshot[8];
-		dato.acc_y = IMU_snapshot[9];
-		dato.acc_z = IMU_snapshot[10];
-		dato.gyr_x = IMU_snapshot[11];
-		dato.gyr_y = IMU_snapshot[12];
-		dato.gyr_z = IMU_snapshot[13];
-		dato.mag_x = IMU_snapshot[14];
-		dato.mag_y = IMU_snapshot[15];
-		dato.mag_z = IMU_snapshot[16];
+		dato.acc_x = IMU_snapshot[8];  // acc_x
+		dato.acc_y = IMU_snapshot[9];  // acc_y
+		dato.acc_z = IMU_snapshot[10]; // acc_z
+		dato.gyr_x = IMU_snapshot[11]; // gyr_x
+		dato.gyr_y = IMU_snapshot[12]; // gyr_y
+		dato.gyr_z = IMU_snapshot[13]; // gyr_z
+		dato.mag_x = IMU_snapshot[14]; // mag_x
+		dato.mag_y = IMU_snapshot[15]; // mag_y
+		dato.mag_z = IMU_snapshot[16]; // mag_z
 
+		/*
 		if(xQueueSend(IMU_fifo,&dato,portMAX_DELAY)==pdPASS)
 		{//Serial.println("data added to FIFO ");
 		 }
 		else{Serial.println("FIFO FULL");}
+		*/
+		
+		filtering(dato);
 		vTaskDelay(pdMS_TO_TICKS(IMU_MS_UPDATE));
-	
 	}
 }
+
+void filtering(IMU_data_t dato)
+{
+	float xyz = dato.acc_x + dato.acc_y + dato.acc_z;
+	float fxyz = lpf.update(xyz);
+	Serial.print(xyz);Serial.print(",");Serial.println(fxyz);
+
+
+}
+
 ///////////////////// TaskBLE//////////////////////
 // Es recomendable que el stack ocupado por el BLE este inicializado antes de
 // su uso, por ende, ojala iniciarlo en el setup o antes del bucle principal
